@@ -99,7 +99,7 @@ class _MainPageState extends State<MainPage> {
                 final isGrid = context.watch<NotesProvider>().isGrid;
 
                 return Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(10.0),
                   child: Column(
                     children: [
                       const ViewOptions(), // View options (Grid/List toggle)
