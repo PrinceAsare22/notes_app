@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:notes_app/change_notifiers/new_note_controller.dart';
@@ -13,6 +14,7 @@ import 'package:notes_app/components/view_options.dart';
 import 'package:notes_app/models/note.dart';
 import 'package:notes_app/pages/new_or_edit_note_page.dart';
 import 'package:notes_app/services/auth_services.dart';
+import 'package:notes_app/services/note_service.dart';
 import 'package:provider/provider.dart';
 
 class MainPage extends StatefulWidget {
@@ -23,8 +25,18 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
+  final NotesService notesService = NotesService();
+
   @override
   Widget build(BuildContext context) {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId == null) {
+      return const Scaffold(
+        body: Center(child: Text('Please log in to view your notes')),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notes'),
@@ -44,46 +56,65 @@ class _MainPageState extends State<MainPage> {
       floatingActionButton: FloatingActionButtonWidget(
         onPressed: () {
           Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => ChangeNotifierProvider(
-                        create: (context) => NewNoteController(),
-                        child: const NewOrEditNotePage(
-                          isNewNote: true,
-                        ),
-                      )));
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChangeNotifierProvider(
+                create: (context) => NewNoteController(),
+                child: const NewOrEditNotePage(
+                  isNewNote: true,
+                ),
+              ),
+            ),
+          );
         },
       ),
-      body: Consumer<NotesProvider>(
-        builder: (context, notesProvider, child) {
-          final List<Note> notes = notesProvider.notes;
-          return notes.isEmpty && notesProvider.searchTerm.isEmpty
-              ? const NoNote()
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
+      body: Column(
+        children: [
+          const MySearchField(), // Search field at the top
+          Expanded(
+            child: StreamBuilder<List<Note>>(
+              stream: notesService.getUserNotes(userId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.amber),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'An error occurred: ${snapshot.error}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                }
+
+                final notes = snapshot.data ?? [];
+
+                if (notes.isEmpty) {
+                  return const NoNote();
+                }
+
+                final isGrid = context.watch<NotesProvider>().isGrid;
+
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
                   child: Column(
                     children: [
-                      const MySearchField(),
-                      if (notes.isNotEmpty) ...[
-                        const ViewOptions(),
-                        Expanded(
-                          child: notesProvider.isGrid
-                              ? NotesGrid(notes: notes)
-                              : NotesList(notes: notes),
-                        ),
-                      ] else
-                        const Expanded(
-                          child: Center(
-                            child: Text(
-                              'No notes found for your search query!',
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        )
+                      const ViewOptions(), // View options (Grid/List toggle)
+                      Expanded(
+                        child: isGrid
+                            ? NotesGrid(notes: notes)
+                            : NotesList(notes: notes),
+                      ),
                     ],
                   ),
                 );
-        },
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

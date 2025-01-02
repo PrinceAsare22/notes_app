@@ -18,7 +18,7 @@ class MessageDialog extends StatelessWidget {
         children: [
           Text(
             message,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -27,7 +27,7 @@ class MessageDialog extends StatelessWidget {
           const SizedBox(height: 16),
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
             NoteButton(
-                child: Text('OK'),
+                child: const Text('OK'),
                 onPressed: () {
                   Navigator.pop(context);
                 }),

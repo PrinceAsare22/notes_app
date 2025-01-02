@@ -142,7 +142,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                   builder: (_) => const RecoverPasswordPage(),
                                 ));
                           },
-                          child: Text(
+                          child: const Text(
                             'Forgot password?',
                             style: TextStyle(
                               color: primary,
@@ -157,16 +157,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
                         child: Selector<RegistrationController, bool>(
                           selector: (_, controller) => controller.isLoading,
                           builder: (_, isLoading, __) => NoteButton(
-                            child: isLoading
-                                ? SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CupertinoActivityIndicator(
-                                        color: white),
-                                  )
-                                : Text(isRegisterMode
-                                    ? 'Create my account'
-                                    : 'Log me in'),
                             onPressed: isLoading
                                 ? null
                                 : () {
@@ -177,6 +167,16 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                               context: context);
                                     }
                                   },
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CupertinoActivityIndicator(
+                                        color: white),
+                                  )
+                                : Text(isRegisterMode
+                                    ? 'Create my account'
+                                    : 'Log me in'),
                           ),
                         ),
                       ),

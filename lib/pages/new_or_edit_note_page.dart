@@ -81,7 +81,7 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
           }
 
           final bool? shouldSave = await showConfirmationDialog(
-              context: context, title: 'Do you want to save the note? ');
+              context: context, title: 'Do you want to save the note?');
           if (shouldSave == null) return;
 
           if (!context.mounted) return;
@@ -95,8 +95,8 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: Padding(
-            padding: const EdgeInsets.all(8.0),
+          leading: const Padding(
+            padding: EdgeInsets.all(8.0),
             child: NoteBackButton(),
           ),
           title: Text(widget.isNewNote ? 'New Note' : 'Edit Note'),
@@ -114,13 +114,14 @@ class _NewOrEditNotePageState extends State<NewOrEditNotePage> {
             Selector<NewNoteController, bool>(
               selector: (_, newNoteController) => newNoteController.canSaveNote,
               builder: (_, canSaveNote, __) => IconButtonOutlined(
-                  icon: FontAwesomeIcons.check,
-                  onPressed: canSaveNote
-                      ? () {
-                          newNoteController.saveNote(context);
-                          Navigator.pop(context);
-                        }
-                      : null),
+                icon: FontAwesomeIcons.check,
+                onPressed: canSaveNote
+                    ? () async {
+                        newNoteController.saveNote(context);
+                        if (context.mounted) Navigator.pop(context);
+                      }
+                    : null,
+              ),
             ),
           ],
         ),

@@ -18,7 +18,7 @@ class ConfirmationDialog extends StatelessWidget {
         children: [
           Text(
             title,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -27,14 +27,14 @@ class ConfirmationDialog extends StatelessWidget {
           const SizedBox(height: 16),
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
             NoteButton(
-                child: Text('No'),
                 isOutlined: true,
                 onPressed: () {
                   Navigator.pop(context, false);
-                }),
+                },
+                child: Text('No')),
             const SizedBox(width: 8),
             NoteButton(
-                child: Text('Yes'),
+                child: const Text('Yes'),
                 onPressed: () {
                   Navigator.pop(context, true);
                 }),

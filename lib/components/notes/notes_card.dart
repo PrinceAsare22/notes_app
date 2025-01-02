@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:notes_app/change_notifiers/new_note_controller.dart';
@@ -111,7 +112,34 @@ class NotesCard extends StatelessWidget {
                         false;
 
                     if (shouldDelete && context.mounted) {
-                      context.read<NotesProvider>().deleteNote(note);
+                      try {
+                        // First delete from Firestore
+                        final docRef =
+                            FirebaseFirestore.instance.collection('notes');
+                        final noteDoc = await docRef
+                            .where('dateCreated', isEqualTo: note.dateCreated)
+                            .get();
+
+                        if (noteDoc.docs.isNotEmpty) {
+                          await noteDoc.docs.first.reference.delete();
+
+                          // If Firestore delete is successful, update local state
+                          if (context.mounted) {
+                            context.read<NotesProvider>().deleteNote(note);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Note deleted successfully')),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text('Failed to delete note: $e')),
+                          );
+                        }
+                      }
                     }
                   },
                   child: FaIcon(
