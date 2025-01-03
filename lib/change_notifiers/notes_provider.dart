@@ -120,7 +120,10 @@ class NotesProvider with ChangeNotifier {
               (e) => e.toString() == data['orderBy'],
               orElse: () => OrderOption.dateCreated);
           _isDescending = data['isDescending'] ?? true;
-          notifyListeners();
+          // Delay the notification to avoid calling during build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            notifyListeners();
+          });
         }
       }
     }
