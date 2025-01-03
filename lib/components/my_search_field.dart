@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:notes_app/change_notifiers/notes_provider.dart';
 import 'package:notes_app/constants.dart';
 import 'package:provider/provider.dart';
+import 'package:notes_app/change_notifiers/notes_provider.dart';
 
 class MySearchField extends StatefulWidget {
-  const MySearchField({
-    super.key,
-  });
+  const MySearchField({super.key});
 
   @override
-  State<MySearchField> createState() => _MySearchFieldState();
+  _MySearchFieldState createState() => _MySearchFieldState();
 }
 
 class _MySearchFieldState extends State<MySearchField> {
@@ -20,10 +18,10 @@ class _MySearchFieldState extends State<MySearchField> {
   @override
   void initState() {
     super.initState();
-    notesProvider = context.read<NotesProvider>(); // Specify the type
+    notesProvider = context.read<NotesProvider>();
     searchController = TextEditingController()
       ..addListener(() {
-        notesProvider.searchTerm = searchController.text;
+        notesProvider.setSearchTerm(searchController.text);
       });
   }
 
@@ -38,50 +36,50 @@ class _MySearchFieldState extends State<MySearchField> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10), // Add const
+      padding: const EdgeInsets.all(8.0),
       child: TextField(
-        controller: searchController, // Use the defined controller
+        controller: searchController,
         decoration: InputDecoration(
-          hintText: 'Search notes...',
-          hintStyle: const TextStyle(fontSize: 12, color: gray500),
-          prefixIcon: Icon(
-            FontAwesomeIcons.magnifyingGlass,
-            color: isDark ? white : black,
-            size: 16, // Add appropriate size for the icon
-          ),
-          suffixIcon: ValueListenableBuilder<TextEditingValue>(
-            valueListenable: searchController,
-            builder: (context, value, child) {
-              return Visibility(
-                visible: value.text.isNotEmpty,
-                child: GestureDetector(
-                  onTap: () {
-                    searchController.clear();
-                  },
-                  child: Icon(
-                    FontAwesomeIcons.xmark,
-                    color: isDark ? white : black,
-                    size: 16, // Add appropriate size for the icon
-                  ),
-                ),
-              );
-            },
-          ),
-          fillColor: theme.colorScheme.surface,
+          labelText: 'Search notes',
+          prefixIcon: const Icon(Icons.search),
           filled: true,
+          fillColor: isDark ? gray900 : white,
+          suffixIcon: ListenableBuilder(
+            listenable: searchController,
+            builder: (context, clearButton) => searchController.text.isNotEmpty
+                ? clearButton!
+                : const SizedBox.shrink(),
+            child: GestureDetector(
+              onTap: () {
+                searchController.clear();
+              },
+              child: const Icon(FontAwesomeIcons.xmark),
+            ),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
           isDense: true,
-          prefixIconConstraints:
-              const BoxConstraints(minWidth: 42, minHeight: 42),
-          suffixIconConstraints:
-              const BoxConstraints(minWidth: 42, minHeight: 42),
           contentPadding: EdgeInsets.zero,
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 42,
+            minHeight: 42,
+          ),
+          suffixIconConstraints: const BoxConstraints(
+            minWidth: 42,
+            minHeight: 42,
+          ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: primary),
+            borderSide: const BorderSide(
+              color: primary,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: primary),
+            borderSide: const BorderSide(
+              color: primary,
+            ),
           ),
         ),
       ),

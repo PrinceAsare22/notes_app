@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:notes_app/change_notifiers/notes_provider.dart';
-import 'package:notes_app/components/buttons/icon_button.dart';
-import 'package:notes_app/constants.dart';
-import 'package:notes_app/enums/order_options.dart';
 import 'package:provider/provider.dart';
+import 'package:notes_app/change_notifiers/notes_provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ViewOptions extends StatefulWidget {
   const ViewOptions({super.key});
@@ -15,6 +12,12 @@ class ViewOptions extends StatefulWidget {
 
 class _ViewOptionsState extends State<ViewOptions> {
   @override
+  void initState() {
+    super.initState();
+    context.read<NotesProvider>().loadOrderSettings();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -23,27 +26,27 @@ class _ViewOptionsState extends State<ViewOptions> {
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: Row(
           children: [
-            CustomIconButton(
-              icon: notesProvider.isDescending
-                  ? FontAwesomeIcons.arrowDown
-                  : FontAwesomeIcons.arrowUp,
+            IconButton(
+              icon: FaIcon(
+                notesProvider.isDescending
+                    ? FontAwesomeIcons.arrowDown
+                    : FontAwesomeIcons.arrowUp,
+                size: 18,
+              ),
               onPressed: () {
-                setState(() {
-                  notesProvider.isDescending = !notesProvider.isDescending;
-                });
+                notesProvider.toggleDescending();
               },
-              size: 18,
             ),
             const SizedBox(width: 16),
             DropdownButton<OrderOption>(
-              dropdownColor: isDark ? theme.colorScheme.surface : white,
+              dropdownColor: isDark ? theme.colorScheme.surface : Colors.white,
               value: notesProvider.orderBy,
               icon: Padding(
                 padding: const EdgeInsets.only(left: 16),
                 child: FaIcon(
                   FontAwesomeIcons.arrowDownWideShort,
                   size: 18,
-                  color: isDark ? white : gray700,
+                  color: isDark ? Colors.white : Colors.grey[700],
                 ),
               ),
               underline: const SizedBox.shrink(),
@@ -51,7 +54,7 @@ class _ViewOptionsState extends State<ViewOptions> {
               isDense: true,
               items: OrderOption.values
                   .map(
-                    (e) => DropdownMenuItem(
+                    (e) => DropdownMenuItem<OrderOption>(
                       value: e,
                       child: Row(
                         children: [
@@ -67,25 +70,23 @@ class _ViewOptionsState extends State<ViewOptions> {
                     ),
                   )
                   .toList(),
-              selectedItemBuilder: (context) =>
-                  OrderOption.values.map((e) => Text(e.name)).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  notesProvider.orderBy = newValue!;
-                });
+              onChanged: (OrderOption? newValue) {
+                if (newValue != null) {
+                  notesProvider.setOrderBy(newValue);
+                }
               },
             ),
             const Spacer(),
-            CustomIconButton(
-              icon: notesProvider.isGrid
-                  ? FontAwesomeIcons.tableCellsLarge
-                  : FontAwesomeIcons.bars,
+            IconButton(
+              icon: FaIcon(
+                notesProvider.isGrid
+                    ? FontAwesomeIcons.tableCellsLarge
+                    : FontAwesomeIcons.bars,
+                size: 18,
+              ),
               onPressed: () {
-                setState(() {
-                  notesProvider.isGrid = !notesProvider.isGrid;
-                });
+                notesProvider.toggleView();
               },
-              size: 18,
             ),
           ],
         ),

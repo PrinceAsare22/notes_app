@@ -7,7 +7,6 @@ import 'package:notes_app/components/buttons/floating_action_button.dart';
 import 'package:notes_app/components/buttons/icon_button_outlined.dart';
 import 'package:notes_app/components/dialog/dialogs.dart';
 import 'package:notes_app/components/my_search_field.dart';
-import 'package:notes_app/components/notes/no_notes.dart';
 import 'package:notes_app/components/notes/notes_grid.dart';
 import 'package:notes_app/components/notes/notes_list.dart';
 import 'package:notes_app/components/view_options.dart';
@@ -27,6 +26,10 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   final NotesService notesService = NotesService();
 
+  void _dismissKeyboard() {
+    FocusScope.of(context).unfocus();
+  }
+
   @override
   Widget build(BuildContext context) {
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -38,8 +41,9 @@ class _MainPageState extends State<MainPage> {
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text('Notes'),
+        title: const Text('Notes 📙'),
         actions: [
           IconButtonOutlined(
             onPressed: () async {
@@ -68,53 +72,54 @@ class _MainPageState extends State<MainPage> {
           );
         },
       ),
-      body: Column(
-        children: [
-          const MySearchField(), // Search field at the top
-          Expanded(
-            child: StreamBuilder<List<Note>>(
-              stream: notesService.getUserNotes(userId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Colors.amber),
-                  );
-                }
+      body: GestureDetector(
+        onTap: _dismissKeyboard,
+        child: Column(
+          children: [
+            const MySearchField(), // Search field at the top
+            const ViewOptions(), // View options (Grid/List toggle)
+            Expanded(
+              child: StreamBuilder<List<Note>>(
+                stream: notesService.getUserNotes(userId),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.amber),
+                    );
+                  }
 
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text(
-                      'An error occurred: ${snapshot.error}',
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  );
-                }
-
-                final notes = snapshot.data ?? [];
-
-                if (notes.isEmpty) {
-                  return const NoNote();
-                }
-
-                final isGrid = context.watch<NotesProvider>().isGrid;
-
-                return Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Column(
-                    children: [
-                      const ViewOptions(), // View options (Grid/List toggle)
-                      Expanded(
-                        child: isGrid
-                            ? NotesGrid(notes: notes)
-                            : NotesList(notes: notes),
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        'An error occurred: ${snapshot.error}',
+                        style: const TextStyle(color: Colors.red),
                       ),
-                    ],
-                  ),
-                );
-              },
+                    );
+                  }
+
+                  final notes = snapshot.data ?? [];
+                  context.read<NotesProvider>().setNotes(notes);
+
+                  final filteredNotes = context.watch<NotesProvider>().notes;
+                  final isGrid = context.watch<NotesProvider>().isGrid;
+
+                  if (filteredNotes.isEmpty) {
+                    return Center(
+                        child:
+                            const Text("No notes matched your search query!"));
+                  }
+
+                  return Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: isGrid
+                        ? NotesGrid(notes: filteredNotes)
+                        : NotesList(notes: filteredNotes),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

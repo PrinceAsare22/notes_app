@@ -87,18 +87,17 @@ class NewNoteController extends ChangeNotifier {
 
   Future<void> saveNote(BuildContext context) async {
     try {
-      final String? newTitle = title.isNotEmpty ? title : null;
-      final String? newContent = content.toPlainText().trim().isNotEmpty
-          ? content.toPlainText().trim()
-          : null;
+      final String userId = FirebaseAuth.instance.currentUser!.uid;
       final String contentJson = jsonEncode(content.toDelta().toJson());
       final int now = DateTime.now().microsecondsSinceEpoch;
 
       final Note note = Note(
         id: isNewNote ? '' : _note!.id,
-        userId: isNewNote ? '' : _note!.userId,
-        content: newContent,
-        title: newTitle,
+        userId: userId,
+        title: title.isNotEmpty ? title : null,
+        content: content.toPlainText().trim().isNotEmpty
+            ? content.toPlainText().trim()
+            : null,
         contentJson: contentJson,
         dateCreated: isNewNote ? now : _note!.dateCreated,
         dateModified: now,
@@ -106,16 +105,13 @@ class NewNoteController extends ChangeNotifier {
       );
 
       final notesProvider = context.read<NotesProvider>();
-      isNewNote ? notesProvider.addNote(note) : notesProvider.updateNote(note);
 
       final docRef = _firestore.collection('notes');
 
-      final String userId = FirebaseAuth.instance.currentUser!.uid;
-
       if (isNewNote) {
-        // Add a new note
-        await docRef.add({
-          'userId': userId, // Add userId to Firestore
+        // Add new note
+        final newDoc = await docRef.add({
+          'userId': userId,
           'title': note.title,
           'content': note.content,
           'contentJson': note.contentJson,
@@ -123,22 +119,20 @@ class NewNoteController extends ChangeNotifier {
           'dateModified': note.dateModified,
           'tags': note.tags,
         });
-      } else {
-        // Update an existing note
-        final noteDoc = await docRef
-            .where('userId', isEqualTo: userId)
-            .where('dateCreated', isEqualTo: _note!.dateCreated)
-            .get();
 
-        if (noteDoc.docs.isNotEmpty) {
-          await noteDoc.docs.first.reference.update({
-            'title': note.title,
-            'content': note.content,
-            'contentJson': note.contentJson,
-            'dateModified': note.dateModified,
-            'tags': note.tags,
-          });
-        }
+        note.id = newDoc.id; // Assign generated ID
+        notesProvider.addNote(note);
+      } else {
+        // Update existing note
+        await docRef.doc(note.id).update({
+          'title': note.title,
+          'content': note.content,
+          'contentJson': note.contentJson,
+          'dateModified': note.dateModified,
+          'tags': note.tags,
+        });
+
+        notesProvider.updateNote(note);
       }
 
       notifyListeners();

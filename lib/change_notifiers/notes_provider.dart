@@ -1,36 +1,81 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:notes_app/enums/order_options.dart';
 import 'package:notes_app/models/note.dart';
 
-extension ListDeepContains on List<String> {
-  bool deepContains(String term) =>
-      contains(term) || any((element) => element.contains(term));
-}
+enum OrderOption { dateCreated, dateModified, title }
 
-class NotesProvider extends ChangeNotifier {
-  final List<Note> _notes = [];
+class NotesProvider with ChangeNotifier {
+  List<Note> _notes = [];
+  String _searchTerm = '';
+  bool _isGrid = true;
+  OrderOption _orderBy = OrderOption.dateCreated;
+  bool _isDescending = true;
 
-  List<Note> get notes =>
-      [..._searchTerm.isEmpty ? _notes : _notes.where(_test)]..sort(_compare);
+  List<Note> get notes {
+    List<Note> filteredNotes = _notes;
+    if (_searchTerm.isNotEmpty) {
+      final lowerCaseSearchTerm = _searchTerm.toLowerCase();
+      filteredNotes = filteredNotes
+          .where((note) =>
+              (note.title?.toLowerCase().contains(lowerCaseSearchTerm) ??
+                  false) ||
+              (note.content?.toLowerCase().contains(lowerCaseSearchTerm) ??
+                  false))
+          .toList();
+    }
 
-  bool _test(Note note) {
-    final term = _searchTerm.toLowerCase().trim();
-    final title = note.title?.toLowerCase() ?? '';
-    final content = note.content?.toLowerCase() ?? '';
-    final tags = note.tags?.map((e) => e.toLowerCase()).toList() ?? [];
-    return title.contains(term) ||
-        content.contains(term) ||
-        tags.deepContains(term);
+    switch (_orderBy) {
+      case OrderOption.dateCreated:
+        filteredNotes.sort((a, b) => _isDescending
+            ? b.dateCreated.compareTo(a.dateCreated)
+            : a.dateCreated.compareTo(b.dateCreated));
+        break;
+      case OrderOption.dateModified:
+        filteredNotes.sort((a, b) => _isDescending
+            ? b.dateModified.compareTo(a.dateModified)
+            : a.dateModified.compareTo(b.dateModified));
+        break;
+      case OrderOption.title:
+        filteredNotes.sort((a, b) => _isDescending
+            ? (b.title ?? '').compareTo(a.title ?? '')
+            : (a.title ?? '').compareTo(b.title ?? ''));
+        break;
+    }
+
+    return filteredNotes;
   }
 
-  int _compare(note1, note2) {
-    return _orderBy == OrderOption.dateModified
-        ? _isDescending
-            ? note2.dateModified.compareTo(note1.dateModified)
-            : note1.dateModified.compareTo(note2.dateModified)
-        : isDescending
-            ? note2.dateModified.compareTo(note1.dateCreated)
-            : note1.dateModified.compareTo(note2.dateModified);
+  String get searchTerm => _searchTerm;
+  bool get isGrid => _isGrid;
+  OrderOption get orderBy => _orderBy;
+  bool get isDescending => _isDescending;
+
+  void setNotes(List<Note> notes) {
+    _notes = notes;
+    notifyListeners();
+  }
+
+  void setSearchTerm(String searchTerm) {
+    _searchTerm = searchTerm;
+    notifyListeners();
+  }
+
+  void toggleView() {
+    _isGrid = !_isGrid;
+    notifyListeners();
+  }
+
+  void setOrderBy(OrderOption orderBy) {
+    _orderBy = orderBy;
+    _saveOrderSettings();
+    notifyListeners();
+  }
+
+  void toggleDescending() {
+    _isDescending = !_isDescending;
+    _saveOrderSettings();
+    notifyListeners();
   }
 
   void addNote(Note note) {
@@ -38,47 +83,46 @@ class NotesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateNote(Note note) {
-    final index =
-        _notes.indexWhere((element) => element.dateCreated == note.dateCreated);
-    _notes[index] = note;
+  void updateNote(Note updatedNote) {
+    final index = _notes.indexWhere((note) => note.id == updatedNote.id);
+    if (index != -1) {
+      _notes[index] = updatedNote;
+      notifyListeners();
+    }
+  }
+
+  void deleteNote(String noteId) {
+    _notes.removeWhere((note) => note.id == noteId);
     notifyListeners();
   }
 
-  void deleteNote(Note note) {
-    _notes.remove(note);
-    notifyListeners();
+  Future<void> _saveOrderSettings() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      await FirebaseFirestore.instance.collection('users').doc(userId).set({
+        'orderBy': _orderBy.toString(),
+        'isDescending': _isDescending,
+      }, SetOptions(merge: true));
+    }
   }
 
-  OrderOption _orderBy = OrderOption.dateModified;
-  set orderBy(OrderOption value) {
-    _orderBy = value;
-    notifyListeners();
+  Future<void> loadOrderSettings() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      if (doc.exists) {
+        final data = doc.data();
+        if (data != null) {
+          _orderBy = OrderOption.values.firstWhere(
+              (e) => e.toString() == data['orderBy'],
+              orElse: () => OrderOption.dateCreated);
+          _isDescending = data['isDescending'] ?? true;
+          notifyListeners();
+        }
+      }
+    }
   }
-
-  OrderOption get orderBy => _orderBy;
-
-  bool _isDescending = true;
-  set isDescending(bool value) {
-    _isDescending = value;
-    notifyListeners();
-  }
-
-  bool get isDescending => _isDescending;
-
-  bool _isGrid = true;
-  set isGrid(bool value) {
-    _isGrid = value;
-    notifyListeners();
-  }
-
-  bool get isGrid => _isGrid;
-
-  String _searchTerm = '';
-  set searchTerm(String value) {
-    _searchTerm = value;
-    notifyListeners();
-  }
-
-  String get searchTerm => _searchTerm;
 }

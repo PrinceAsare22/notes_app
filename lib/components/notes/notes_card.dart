@@ -84,6 +84,7 @@ class NotesCard extends StatelessWidget {
                   ? Expanded(
                       child: Text(
                         note.content!,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyMedium,
                       ),
                     )
@@ -125,7 +126,7 @@ class NotesCard extends StatelessWidget {
 
                           // If Firestore delete is successful, update local state
                           if (context.mounted) {
-                            context.read<NotesProvider>().deleteNote(note);
+                            context.read<NotesProvider>().deleteNote(note.id);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                   content: Text('Note deleted successfully')),

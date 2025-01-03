@@ -50,8 +50,8 @@ class NotesService {
       'title': title,
       'content': content,
       'tags': tags,
-      'dateModified': DateTime.now().toIso8601String(),
-      'dateCreated': DateTime.now().toIso8601String(),
+      'dateModified': DateTime.now(),
+      'dateCreated': DateTime.now(),
     });
   }
 

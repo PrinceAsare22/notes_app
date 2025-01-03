@@ -33,6 +33,7 @@ class MyApp extends StatelessWidget {
         )
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Notes 📙',
         theme: ThemeData(
           useMaterial3: true,
