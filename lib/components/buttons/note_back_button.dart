@@ -7,12 +7,17 @@ class NoteBackButton extends StatelessWidget {
     super.key,
   });
 
+  void _dismissKeyboard(BuildContext context) {
+    FocusScope.of(context).unfocus();
+  }
+
   @override
   Widget build(BuildContext context) {
     return IconButtonOutlined(
         icon: FontAwesomeIcons.chevronLeft,
         onPressed: () {
           Navigator.maybePop(context);
+          _dismissKeyboard(context);
         });
   }
 }
