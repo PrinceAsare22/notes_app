@@ -7,6 +7,7 @@ import 'package:notes_app/components/buttons/floating_action_button.dart';
 import 'package:notes_app/components/buttons/icon_button_outlined.dart';
 import 'package:notes_app/components/dialog/dialogs.dart';
 import 'package:notes_app/components/my_search_field.dart';
+import 'package:notes_app/components/notes/no_notes.dart';
 import 'package:notes_app/components/notes/notes_grid.dart';
 import 'package:notes_app/components/notes/notes_list.dart';
 import 'package:notes_app/components/view_options.dart';
@@ -104,9 +105,7 @@ class _MainPageState extends State<MainPage> {
                   final isGrid = context.watch<NotesProvider>().isGrid;
 
                   if (filteredNotes.isEmpty) {
-                    return Center(
-                        child:
-                            const Text("No notes matched your search query!"));
+                    return NoNote();
                   }
 
                   return Padding(
